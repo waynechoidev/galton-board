@@ -6,5 +6,6 @@
   var vsOutput: OurVertexShaderOutput;
   vsOutput.position = vec4f(input.position, 0.0, 1.0);
   vsOutput.texCoord = input.texCoord;
+  vsOutput.isObstacle = input.isObstacle;
   return vsOutput;
 }

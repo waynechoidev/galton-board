@@ -14,8 +14,14 @@ export class VertexBuffers {
   public async initialize(vertices: Vertex[]) {
     const data: number[] = [];
     for (let i = 0; i < vertices.length; ++i) {
-      const { position, velocity, texCoord } = vertices[i];
-      data.push(...position, ...velocity, ...texCoord);
+      const { position, velocity, texCoord, isObstacle } = vertices[i];
+      data.push(
+        ...position,
+        ...velocity,
+        ...texCoord,
+        isObstacle,
+        0 // padding
+      );
     }
 
     const verticesValues = new Float32Array(data);

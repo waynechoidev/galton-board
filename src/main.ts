@@ -7,7 +7,7 @@ import { VertexBuffers } from "./buffer/vertex";
 
 const HEIGHT = document.documentElement.clientHeight;
 const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
-const NUM_OF_PARTICLE = 1;
+const NUM_OF_PARTICLE = 1; //256
 
 const main = async () => {
   // Initialize
@@ -39,6 +39,7 @@ const main = async () => {
       position: [0, 1],
       velocity: [0, -1],
       texCoord: [0, 0],
+      isObstacle: 0,
     });
   }
   const objectBuffers = new VertexBuffers(device, "object");
@@ -50,22 +51,31 @@ const main = async () => {
       position: [0, 0.8],
       velocity: [0, 0],
       texCoord: [0, 0],
+      isObstacle: 1,
     });
   }
   const obstacleBuffers = new VertexBuffers(device, "obstacle");
   await obstacleBuffers.initialize(obstacleVertices);
 
   // Uniform Buffers
-  const screenUniformBuffer = device.createBuffer({
+  const ConstantUniformBuffer = device.createBuffer({
     label: "screen uniform buffer",
-    size: 2 * Float32Array.BYTES_PER_ELEMENT,
+    size: 12 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
   device.queue.writeBuffer(
-    screenUniformBuffer,
+    ConstantUniformBuffer,
     0,
-    new Float32Array([WIDTH, HEIGHT])
+    new Float32Array([
+      ...[1, 0, 0], // object color
+      0.01, // object size
+      ...[1, 1, 1], // obstacle color
+      0.04, // obstacle size
+      ...[WIDTH, HEIGHT], // screenSize
+      1, // numOfObstacle
+      0, // padding
+    ])
   );
 
   const deltaUniformBuffer = device.createBuffer({
@@ -107,7 +117,7 @@ const main = async () => {
       }),
       buffers: [
         {
-          arrayStride: (2 + 2 + 2) * Float32Array.BYTES_PER_ELEMENT,
+          arrayStride: (2 + 2 + 2 + 1 + 1) * Float32Array.BYTES_PER_ELEMENT,
           attributes: [
             {
               shaderLocation: 0, // location = 0 in vertex shader
@@ -124,6 +134,12 @@ const main = async () => {
               offset: 4 * Float32Array.BYTES_PER_ELEMENT,
               format: "float32x2", // texCoord
             },
+            {
+              shaderLocation: 3, // location = 3 in vertex shader
+              offset: 6 * Float32Array.BYTES_PER_ELEMENT,
+              format: "float32", // isObstacle
+            },
+            // padding * 1
           ],
         },
       ],
@@ -163,7 +179,8 @@ const main = async () => {
     layout: computeMovementPipeline.getBindGroupLayout(0),
     entries: [
       { binding: 0, resource: { buffer: objectBuffers.point } },
-      { binding: 1, resource: { buffer: deltaUniformBuffer } },
+      { binding: 1, resource: { buffer: obstacleBuffers.point } },
+      { binding: 2, resource: { buffer: deltaUniformBuffer } },
     ],
   });
 
@@ -173,18 +190,24 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: objectBuffers.point } },
       { binding: 1, resource: { buffer: objectBuffers.billboard } },
-      { binding: 2, resource: { buffer: screenUniformBuffer } },
+      { binding: 2, resource: { buffer: ConstantUniformBuffer } },
     ],
   });
 
   const computeObstacleBillboardBindGroup = device.createBindGroup({
-    label: "compute billboard bind group",
+    label: "compute obstacle billboard bind group",
     layout: computeBillboardPipeline.getBindGroupLayout(0),
     entries: [
       { binding: 0, resource: { buffer: obstacleBuffers.point } },
       { binding: 1, resource: { buffer: obstacleBuffers.billboard } },
-      { binding: 2, resource: { buffer: screenUniformBuffer } },
+      { binding: 2, resource: { buffer: ConstantUniformBuffer } },
     ],
+  });
+
+  const mainBindGroup = device.createBindGroup({
+    label: "main bind group",
+    layout: mainPipeline.getBindGroupLayout(0),
+    entries: [{ binding: 0, resource: { buffer: ConstantUniformBuffer } }],
   });
 
   const encoder = device.createCommandEncoder({
@@ -242,6 +265,7 @@ const main = async () => {
       ],
     });
     mainPass.setPipeline(mainPipeline);
+    mainPass.setBindGroup(0, mainBindGroup);
     mainPass.setVertexBuffer(0, objectBuffers.billboard);
     mainPass.draw(NUM_OF_PARTICLE * 6);
 

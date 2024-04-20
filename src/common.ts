@@ -4,4 +4,5 @@ export type Vertex = {
   position: Vec2;
   velocity: Vec2;
   texCoord: Vec2;
+  isObstacle: number;
 };
