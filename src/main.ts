@@ -3,6 +3,7 @@ import compute_movement from "./shaders/movement.compute.wgsl";
 import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
+import { getVertexBuffers } from "./buffers/vertex";
 
 const HEIGHT = document.documentElement.clientHeight;
 const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
@@ -32,40 +33,25 @@ const main = async () => {
   });
 
   // Buffers
-  const pointVertices: Vertex[] = [];
+  const objectVertices: Vertex[] = [];
   for (let i = 0; i < NUM_OF_PARTICLE; ++i) {
-    pointVertices.push({
+    objectVertices.push({
       position: [0, 1],
       velocity: [0, -1],
       texCoord: [0, 0],
     });
   }
+  const objectBuffers = await getVertexBuffers(device, objectVertices);
 
-  const pointVerticesData: number[] = [];
-  for (let i = 0; i < pointVertices.length; ++i) {
-    const { position, velocity, texCoord } = pointVertices[i];
-    pointVerticesData.push(...position, ...velocity, ...texCoord);
+  const obstacleVertices: Vertex[] = [];
+  for (let i = 0; i < 1; ++i) {
+    obstacleVertices.push({
+      position: [0, 0.8],
+      velocity: [0, 0],
+      texCoord: [0, 0],
+    });
   }
-  const pointVertexValues = new Float32Array(pointVerticesData);
-  const pointVertexBuffer = device.createBuffer({
-    label: "point vertex buffer",
-    size: pointVertexValues.byteLength,
-    usage:
-      GPUBufferUsage.STORAGE |
-      GPUBufferUsage.COPY_SRC |
-      GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(pointVertexBuffer, 0, pointVertexValues);
-
-  const billboardVertexBuffer = device.createBuffer({
-    label: "billboard vertex buffer",
-    size: pointVertexValues.byteLength * 6,
-    usage:
-      GPUBufferUsage.VERTEX |
-      GPUBufferUsage.STORAGE |
-      GPUBufferUsage.COPY_SRC |
-      GPUBufferUsage.COPY_DST,
-  });
+  const obstacleBuffers = await getVertexBuffers(device, obstacleVertices);
 
   const screenUniformBuffer = device.createBuffer({
     label: "screen uniform buffer",
@@ -173,7 +159,7 @@ const main = async () => {
     label: "compute movement bind group",
     layout: computeMovementPipeline.getBindGroupLayout(0),
     entries: [
-      { binding: 0, resource: { buffer: pointVertexBuffer } },
+      { binding: 0, resource: { buffer: objectBuffers.point } },
       { binding: 1, resource: { buffer: deltaUniformBuffer } },
     ],
   });
@@ -182,11 +168,36 @@ const main = async () => {
     label: "compute billboard bind group",
     layout: computeBillboardPipeline.getBindGroupLayout(0),
     entries: [
-      { binding: 0, resource: { buffer: pointVertexBuffer } },
-      { binding: 1, resource: { buffer: billboardVertexBuffer } },
+      { binding: 0, resource: { buffer: objectBuffers.point } },
+      { binding: 1, resource: { buffer: objectBuffers.billboard } },
       { binding: 2, resource: { buffer: screenUniformBuffer } },
     ],
   });
+
+  const computeObstacleBillboardBindGroup = device.createBindGroup({
+    label: "compute billboard bind group",
+    layout: computeBillboardPipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: { buffer: obstacleBuffers.point } },
+      { binding: 1, resource: { buffer: obstacleBuffers.billboard } },
+      { binding: 2, resource: { buffer: screenUniformBuffer } },
+    ],
+  });
+
+  const encoder = device.createCommandEncoder({
+    label: "encoder",
+  });
+
+  const computeBillboardPass = encoder.beginComputePass({
+    label: "compute billboard pass",
+  });
+  computeBillboardPass.setPipeline(computeBillboardPipeline);
+  computeBillboardPass.setBindGroup(0, computeObstacleBillboardBindGroup);
+  computeBillboardPass.dispatchWorkgroups(1, 1);
+  computeBillboardPass.end();
+
+  const commandBuffer = encoder.finish();
+  device.queue.submit([commandBuffer]);
 
   let previousFrameTime = 0;
   function render() {
@@ -228,7 +239,10 @@ const main = async () => {
       ],
     });
     mainPass.setPipeline(mainPipeline);
-    mainPass.setVertexBuffer(0, billboardVertexBuffer);
+    mainPass.setVertexBuffer(0, objectBuffers.billboard);
+    mainPass.draw(NUM_OF_PARTICLE * 6);
+
+    mainPass.setVertexBuffer(0, obstacleBuffers.billboard);
     mainPass.draw(NUM_OF_PARTICLE * 6);
     mainPass.end();
 
