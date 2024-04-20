@@ -1,11 +1,9 @@
-export type Position = [number, number];
-export type TexCoord = [number, number];
+export type Vec2 = [number, number];
+
 export type Color = [number, number, number, number];
 export type Vertex = {
-  position: Position;
-  texCoord: TexCoord;
-  color: Color;
-  speed: number;
+  position: Vec2;
+  texCoord: Vec2;
 };
 
 export const colorTable: Color[] = [

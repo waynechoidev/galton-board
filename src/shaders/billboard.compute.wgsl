@@ -35,6 +35,6 @@ fn computeSomething(
     let input = inputVertex[startIndex];
 
     for (var i = 0; i < 6; i++) {
-        outputVertex[startIndex * 6 + i] = Vertex(input.position + pos[i] * scale, tex[i], input.color, input.speed);
+        outputVertex[startIndex * 6 + i] = Vertex(input.position + pos[i] * scale, tex[i]);
     }
 }
