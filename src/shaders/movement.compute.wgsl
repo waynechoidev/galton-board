@@ -17,7 +17,7 @@ fn computeSomething(
 
     for (var idx = startIdx; idx < endIdx; idx++) {
         let input = inputVertex[idx];
-        let velocity = vec2f(-input.position.y, input.position.x * screenRatio) * input.speed;
+        let velocity = vec2f(0.0, -1.0) * input.speed;
         inputVertex[idx] = Vertex(input.position + velocity * speedFactor * delta, input.texCoord, input.color, input.speed);
     }
 }

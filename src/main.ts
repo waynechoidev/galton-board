@@ -5,10 +5,9 @@ import main_frag from "./shaders/main.frag.wgsl";
 import { getRandomFloat, getRandomInt } from "./utils";
 import { Vertex, colorTable } from "./common";
 
-const WIDTH = document.documentElement.clientWidth;
 const HEIGHT = document.documentElement.clientHeight;
-const NUM_OF_VERTEX_PER_WORKGROUP = 1820;
-const NUM_OF_PARTICLE = 256 * NUM_OF_VERTEX_PER_WORKGROUP;
+const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
+const NUM_OF_PARTICLE = 1;
 const SPEED = 0.01;
 
 const main = async () => {
@@ -21,6 +20,8 @@ const main = async () => {
   }
 
   const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+  canvas.style.width = `${WIDTH}px`;
+  canvas.style.height = `${HEIGHT}px`;
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
 
@@ -36,16 +37,7 @@ const main = async () => {
   const pointVertices: Vertex[] = [];
   for (let i = 0; i < NUM_OF_PARTICLE; ++i) {
     pointVertices.push({
-      position:
-        WIDTH > HEIGHT
-          ? [
-              getRandomFloat(-1.2, 1.2),
-              getRandomFloat((-1.2 * WIDTH) / HEIGHT, (1.2 * WIDTH) / HEIGHT),
-            ]
-          : [
-              getRandomFloat((-1.2 * HEIGHT) / WIDTH, (1.2 * HEIGHT) / WIDTH),
-              getRandomFloat(-1.2, 1.2),
-            ],
+      position: [0, 1],
       color: colorTable[getRandomInt(0, 6)],
       texCoord: [0, 0],
       speed: getRandomFloat(0.1 * SPEED, 0.5 * SPEED),
@@ -107,7 +99,7 @@ const main = async () => {
   device.queue.writeBuffer(
     numOfVertexPerWorkgroupUniformBuffer,
     0,
-    new Int32Array([NUM_OF_VERTEX_PER_WORKGROUP])
+    new Int32Array([1])
   );
 
   const deltaUniformBuffer = device.createBuffer({

@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
 
 const config = defineConfig({
-  base: "/webgpu-particles/",
+  base: "/galton-board/",
   server: {
     port: 8888,
   },
