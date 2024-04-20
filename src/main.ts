@@ -3,7 +3,7 @@ import compute_movement from "./shaders/movement.compute.wgsl";
 import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
-import { getVertexBuffers } from "./buffers/vertex";
+import { VertexBuffers } from "./buffer/vertex";
 
 const HEIGHT = document.documentElement.clientHeight;
 const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
@@ -32,7 +32,7 @@ const main = async () => {
     format: presentationFormat,
   });
 
-  // Buffers
+  // Vertex Buffers
   const objectVertices: Vertex[] = [];
   for (let i = 0; i < NUM_OF_PARTICLE; ++i) {
     objectVertices.push({
@@ -41,7 +41,8 @@ const main = async () => {
       texCoord: [0, 0],
     });
   }
-  const objectBuffers = await getVertexBuffers(device, objectVertices);
+  const objectBuffers = new VertexBuffers(device, "object");
+  await objectBuffers.initialize(objectVertices);
 
   const obstacleVertices: Vertex[] = [];
   for (let i = 0; i < 1; ++i) {
@@ -51,8 +52,10 @@ const main = async () => {
       texCoord: [0, 0],
     });
   }
-  const obstacleBuffers = await getVertexBuffers(device, obstacleVertices);
+  const obstacleBuffers = new VertexBuffers(device, "obstacle");
+  await obstacleBuffers.initialize(obstacleVertices);
 
+  // Uniform Buffers
   const screenUniformBuffer = device.createBuffer({
     label: "screen uniform buffer",
     size: 2 * Float32Array.BYTES_PER_ELEMENT,
