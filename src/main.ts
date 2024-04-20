@@ -90,18 +90,6 @@ const main = async () => {
     new Float32Array([WIDTH, HEIGHT])
   );
 
-  const numOfVertexPerWorkgroupUniformBuffer = device.createBuffer({
-    label: "num of vertex per workgroup buffer",
-    size: Int32Array.BYTES_PER_ELEMENT,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  device.queue.writeBuffer(
-    numOfVertexPerWorkgroupUniformBuffer,
-    0,
-    new Int32Array([1])
-  );
-
   const deltaUniformBuffer = device.createBuffer({
     label: "time uniform buffer",
     size: 2 * Float32Array.BYTES_PER_ELEMENT,
@@ -204,11 +192,6 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: pointVertexBuffer } },
       { binding: 1, resource: { buffer: deltaUniformBuffer } },
-      { binding: 2, resource: { buffer: screenUniformBuffer } },
-      {
-        binding: 3,
-        resource: { buffer: numOfVertexPerWorkgroupUniformBuffer },
-      },
     ],
   });
 
@@ -219,10 +202,6 @@ const main = async () => {
       { binding: 0, resource: { buffer: pointVertexBuffer } },
       { binding: 1, resource: { buffer: billboardVertexBuffer } },
       { binding: 2, resource: { buffer: screenUniformBuffer } },
-      {
-        binding: 3,
-        resource: { buffer: numOfVertexPerWorkgroupUniformBuffer },
-      },
     ],
   });
 
