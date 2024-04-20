@@ -11,7 +11,6 @@ fn computeSomething(
     let speed:f32 = 0.0001;
 
     let input = inputVertex[index];
-    let velocity = vec2f(0.0, -1.0);
 
-    inputVertex[index] = Vertex(input.position + velocity * speed * delta, input.texCoord);
+    inputVertex[index] = Vertex(input.position + input.velocity * speed * delta, input.velocity, input.texCoord);
 }

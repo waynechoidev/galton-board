@@ -2,13 +2,11 @@ import compute_billboard from "./shaders/billboard.compute.wgsl";
 import compute_movement from "./shaders/movement.compute.wgsl";
 import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
-import { getRandomFloat, getRandomInt } from "./utils";
-import { Vertex, colorTable } from "./common";
+import { Vertex } from "./common";
 
 const HEIGHT = document.documentElement.clientHeight;
 const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
 const NUM_OF_PARTICLE = 1;
-const SPEED = 0.01;
 
 const main = async () => {
   // Initialize
@@ -38,14 +36,15 @@ const main = async () => {
   for (let i = 0; i < NUM_OF_PARTICLE; ++i) {
     pointVertices.push({
       position: [0, 1],
+      velocity: [0, -1],
       texCoord: [0, 0],
     });
   }
 
   const pointVerticesData: number[] = [];
   for (let i = 0; i < pointVertices.length; ++i) {
-    const { position, texCoord } = pointVertices[i];
-    pointVerticesData.push(...position, ...texCoord);
+    const { position, velocity, texCoord } = pointVertices[i];
+    pointVerticesData.push(...position, ...velocity, ...texCoord);
   }
   const pointVertexValues = new Float32Array(pointVerticesData);
   const pointVertexBuffer = device.createBuffer({
@@ -119,7 +118,7 @@ const main = async () => {
       }),
       buffers: [
         {
-          arrayStride: (2 + 2) * Float32Array.BYTES_PER_ELEMENT,
+          arrayStride: (2 + 2 + 2) * Float32Array.BYTES_PER_ELEMENT,
           attributes: [
             {
               shaderLocation: 0, // location = 0 in vertex shader
@@ -129,6 +128,11 @@ const main = async () => {
             {
               shaderLocation: 1, // location = 1 in vertex shader
               offset: 2 * Float32Array.BYTES_PER_ELEMENT,
+              format: "float32x2", // velocity
+            },
+            {
+              shaderLocation: 2, // location = 2 in vertex shader
+              offset: 4 * Float32Array.BYTES_PER_ELEMENT,
               format: "float32x2", // texCoord
             },
           ],

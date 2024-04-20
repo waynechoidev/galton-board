@@ -6,5 +6,6 @@ struct OurVertexShaderOutput {
 
 struct Vertex {
   @location(0) position: vec2f,
-  @location(1) texCoord: vec2f,
+  @location(1) velocity: vec2f,
+  @location(2) texCoord: vec2f,
 };
