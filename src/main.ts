@@ -18,6 +18,55 @@ const NUM_OF_OBSTACLE = sumUpToN(LAYERS_OF_OBSTACLE);
 const BG_COLOR = [0.97, 0.92, 0.8];
 const OBSTACLE_COLOR = [0.545, 0.271, 0.075];
 
+const board = document.querySelector("#board") as HTMLDivElement;
+board.style.width = `${WIDTH}px`;
+board.style.backgroundColor = `rgb(${BG_COLOR.map((val) =>
+  Math.round(val * 255)
+).join(",")})`;
+board.style.border = `2px rgb(${OBSTACLE_COLOR.map((val) =>
+  Math.round(val * 255)
+).join(",")}) solid`;
+
+const resultHeight = HEIGHT * 0.3;
+const resultEl = document.querySelector("#result") as HTMLDivElement;
+resultEl.style.height = `${resultHeight}px`;
+const resultGraph: HTMLSpanElement[] = [];
+for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
+  const slot = document.createElement("span");
+  slot.className = "slot";
+  slot.style.borderLeft = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
+    Math.round(val * 255)
+  ).join(",")}) solid`;
+  if (i === LAYERS_OF_OBSTACLE)
+    slot.style.borderRight = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
+      Math.round(val * 255)
+    ).join(",")}) solid`;
+  slot.style.width = `${WIDTH * 0.039}px`;
+  const res = document.createElement("span");
+  res.className = "res";
+  res.style.fontSize = `${WIDTH * 0.04}px`;
+  slot.append(res);
+  resultGraph.push(res);
+  resultEl.append(slot);
+}
+
+/* border-left: 10px solid transparent;
+border-right: 10px solid transparent; */
+const funnel = document.querySelector("#funnel") as HTMLDivElement;
+funnel.style.borderTop = `${HEIGHT * 0.05}px rgb(${OBSTACLE_COLOR.map((val) =>
+  Math.round(val * 255)
+).join(",")}) solid`;
+funnel.style.borderLeft = `${WIDTH * 0.1}px transparent solid`;
+funnel.style.borderRight = `${WIDTH * 0.1}px transparent solid`;
+funnel.style.width = `${WIDTH * 0.15}px`;
+funnel.style.marginTop = `${WIDTH * 0.0}px`;
+
+const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+canvas.style.width = `${WIDTH}px`;
+canvas.style.height = `${HEIGHT}px`;
+canvas.width = WIDTH * 5;
+canvas.height = HEIGHT * 5;
+
 const main = async () => {
   // Initialize
   const adapter = await navigator.gpu?.requestAdapter();
@@ -26,56 +75,6 @@ const main = async () => {
     alert("need a browser that supports WebGPU");
     return;
   }
-
-  const board = document.querySelector("#board") as HTMLDivElement;
-  board.style.width = `${WIDTH}px`;
-  // board.style.height = `${document.documentElement.clientHeight}px`;
-  board.style.backgroundColor = `rgb(${BG_COLOR.map((val) =>
-    Math.round(val * 255)
-  ).join(",")})`;
-  board.style.border = `2px rgb(${OBSTACLE_COLOR.map((val) =>
-    Math.round(val * 255)
-  ).join(",")}) solid`;
-
-  const resultHeight = HEIGHT * 0.3;
-  const resultEl = document.querySelector("#result") as HTMLDivElement;
-  resultEl.style.height = `${resultHeight}px`;
-  const resultGraph: HTMLSpanElement[] = [];
-  for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
-    const slot = document.createElement("span");
-    slot.className = "slot";
-    slot.style.borderLeft = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
-      Math.round(val * 255)
-    ).join(",")}) solid`;
-    if (i === LAYERS_OF_OBSTACLE)
-      slot.style.borderRight = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
-        Math.round(val * 255)
-      ).join(",")}) solid`;
-    slot.style.width = `${WIDTH * 0.039}px`;
-    const res = document.createElement("span");
-    res.className = "res";
-    res.style.fontSize = `${WIDTH * 0.04}px`;
-    slot.append(res);
-    resultGraph.push(res);
-    resultEl.append(slot);
-  }
-
-  /* border-left: 10px solid transparent;
-  border-right: 10px solid transparent; */
-  const funnel = document.querySelector("#funnel") as HTMLDivElement;
-  funnel.style.borderTop = `${HEIGHT * 0.05}px rgb(${OBSTACLE_COLOR.map((val) =>
-    Math.round(val * 255)
-  ).join(",")}) solid`;
-  funnel.style.borderLeft = `${WIDTH * 0.1}px transparent solid`;
-  funnel.style.borderRight = `${WIDTH * 0.1}px transparent solid`;
-  funnel.style.width = `${WIDTH * 0.15}px`;
-  funnel.style.marginTop = `${WIDTH * 0.0}px`;
-
-  const canvas = document.querySelector("canvas") as HTMLCanvasElement;
-  canvas.style.width = `${WIDTH}px`;
-  canvas.style.height = `${HEIGHT}px`;
-  canvas.width = WIDTH * 5;
-  canvas.height = HEIGHT * 5;
 
   const presentationFormat: GPUTextureFormat =
     navigator.gpu.getPreferredCanvasFormat();
