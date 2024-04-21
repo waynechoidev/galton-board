@@ -7,7 +7,11 @@ import { Vertex } from "./common";
 import { VertexBuffers } from "./vertex-buffers";
 import { sumUpToN, generateRandomProbabilities } from "./utils";
 
-const HEIGHT = document.documentElement.clientHeight * 0.6;
+const HEIGHT =
+  document.documentElement.clientHeight *
+  (document.documentElement.clientHeight > document.documentElement.clientWidth
+    ? 0.5
+    : 0.7);
 const WIDTH = HEIGHT;
 const NUM_OF_PARTICLE = 256;
 const LAYERS_OF_OBSTACLE = 22;
@@ -34,7 +38,9 @@ const main = async () => {
     Math.round(val * 255)
   ).join(",")}) solid`;
 
+  const resultHeight = HEIGHT * 0.2;
   const resultEl = document.querySelector("#result") as HTMLDivElement;
+  resultEl.style.height = `${resultHeight}px`;
   const resultGraph: HTMLSpanElement[] = [];
   for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
     const slot = document.createElement("span");
@@ -52,6 +58,17 @@ const main = async () => {
     resultGraph.push(res);
     resultEl.append(slot);
   }
+
+  /* border-left: 10px solid transparent;
+  border-right: 10px solid transparent; */
+  const funnel = document.querySelector("#funnel") as HTMLDivElement;
+  funnel.style.borderTop = `${HEIGHT * 0.05}px rgb(${OBSTACLE_COLOR.map((val) =>
+    Math.round(val * 255)
+  ).join(",")}) solid`;
+  funnel.style.borderLeft = `${WIDTH * 0.1}px transparent solid`;
+  funnel.style.borderRight = `${WIDTH * 0.1}px transparent solid`;
+  funnel.style.width = `${WIDTH * 0.15}px`;
+  funnel.style.marginTop = `${WIDTH * 0.0}px`;
 
   const canvas = document.querySelector("canvas") as HTMLCanvasElement;
   canvas.style.width = `${WIDTH}px`;
@@ -395,11 +412,13 @@ const main = async () => {
     });
     mainPass.setPipeline(mainPipeline);
     mainPass.setBindGroup(0, mainBindGroup);
-    mainPass.setVertexBuffer(0, objectBuffers.billboard);
-    mainPass.draw(NUM_OF_PARTICLE * 6);
 
     mainPass.setVertexBuffer(0, obstacleBuffers.billboard);
     mainPass.draw(NUM_OF_OBSTACLE * 6);
+
+    mainPass.setVertexBuffer(0, objectBuffers.billboard);
+    mainPass.draw(NUM_OF_PARTICLE * 6);
+
     mainPass.end();
 
     encoder.copyBufferToBuffer(
@@ -420,7 +439,7 @@ const main = async () => {
 
     const max = Math.max.apply(null, Array.from(result));
     for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
-      resultGraph[i].style.height = `${(result[i] / max) * 50}px`;
+      resultGraph[i].style.height = `${(result[i] / max) * resultHeight}px`;
     }
 
     requestAnimationFrame(render);

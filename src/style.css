@@ -21,16 +21,6 @@ body {
   align-items: center;
 }
 
-#funnel {
-  margin-top: 2px;
-  width: 10px;
-  height: 0px;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 7px solid brown;
-  border-radius: 2px;
-}
-
 #result {
   width: 100%;
   display: flex;
@@ -39,7 +29,6 @@ body {
 
 .slot {
   width: 3.8%;
-  height: 50px;
   display: flex;
   align-items: end;
 }
