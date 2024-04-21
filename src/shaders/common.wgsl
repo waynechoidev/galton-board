@@ -14,9 +14,9 @@ struct Vertex {
 
 struct Constant {
   @location(0) objectColor: vec3f,
-  @location(1) objectSize: f32,
+  @location(1) objectRadius: f32,
   @location(2) obstacleColor: vec3f,
-  @location(3) obstacleSize: f32,
+  @location(3) obstacleRadius: f32,
   @location(4) screenSize: vec2f,
   @location(5) numOfObstacle: f32,
 }

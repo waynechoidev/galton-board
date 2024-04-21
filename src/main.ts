@@ -21,8 +21,8 @@ const main = async () => {
   const canvas = document.querySelector("canvas") as HTMLCanvasElement;
   canvas.style.width = `${WIDTH}px`;
   canvas.style.height = `${HEIGHT}px`;
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  canvas.width = WIDTH * 2;
+  canvas.height = HEIGHT * 2;
 
   const presentationFormat: GPUTextureFormat =
     navigator.gpu.getPreferredCanvasFormat();
@@ -58,20 +58,20 @@ const main = async () => {
   await obstacleBuffers.initialize(obstacleVertices);
 
   // Uniform Buffers
-  const ConstantUniformBuffer = device.createBuffer({
+  const constantUniformBuffer = device.createBuffer({
     label: "screen uniform buffer",
     size: 12 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
   device.queue.writeBuffer(
-    ConstantUniformBuffer,
+    constantUniformBuffer,
     0,
     new Float32Array([
       ...[1, 0, 0], // object color
       0.01, // object size
       ...[1, 1, 1], // obstacle color
-      0.04, // obstacle size
+      0.02, // obstacle size
       ...[WIDTH, HEIGHT], // screenSize
       1, // numOfObstacle
       0, // padding
@@ -180,7 +180,8 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: objectBuffers.point } },
       { binding: 1, resource: { buffer: obstacleBuffers.point } },
-      { binding: 2, resource: { buffer: deltaUniformBuffer } },
+      { binding: 2, resource: { buffer: constantUniformBuffer } },
+      { binding: 3, resource: { buffer: deltaUniformBuffer } },
     ],
   });
 
@@ -190,7 +191,7 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: objectBuffers.point } },
       { binding: 1, resource: { buffer: objectBuffers.billboard } },
-      { binding: 2, resource: { buffer: ConstantUniformBuffer } },
+      { binding: 2, resource: { buffer: constantUniformBuffer } },
     ],
   });
 
@@ -200,14 +201,14 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: obstacleBuffers.point } },
       { binding: 1, resource: { buffer: obstacleBuffers.billboard } },
-      { binding: 2, resource: { buffer: ConstantUniformBuffer } },
+      { binding: 2, resource: { buffer: constantUniformBuffer } },
     ],
   });
 
   const mainBindGroup = device.createBindGroup({
     label: "main bind group",
     layout: mainPipeline.getBindGroupLayout(0),
-    entries: [{ binding: 0, resource: { buffer: ConstantUniformBuffer } }],
+    entries: [{ binding: 0, resource: { buffer: constantUniformBuffer } }],
   });
 
   const encoder = device.createCommandEncoder({

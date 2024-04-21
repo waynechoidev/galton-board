@@ -32,10 +32,10 @@ fn computeSomething(
 
     let input = inputVertex[startIndex];
 
-    var size:f32 = constant.objectSize;
+    var size:f32 = constant.objectRadius * 2;
     if(input.isObstacle == 1.0)
     {
-        size = constant.obstacleSize;
+        size = constant.obstacleRadius * 2;
     }
 
     for (var i = 0; i < 6; i++) {
