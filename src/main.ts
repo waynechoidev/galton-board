@@ -190,7 +190,7 @@ const main = async () => {
 
   const constantUniformBuffer = device.createBuffer({
     label: "constant uniform buffer",
-    size: 16 * Float32Array.BYTES_PER_ELEMENT,
+    size: 12 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
@@ -202,10 +202,9 @@ const main = async () => {
       0.01, // object size
       ...OBSTACLE_COLOR, // obstacle color
       0.025, // obstacle size
-      ...BG_COLOR, // bg color
       LAYERS_OF_OBSTACLE, // layers of obstacle
       NUM_OF_OBSTACLE, // numOfObstacle
-      ...[0, 0, 0], // padding
+      ...[0, 0], // padding
     ])
   );
 

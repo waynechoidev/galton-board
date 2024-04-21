@@ -17,7 +17,6 @@ struct Constant {
   @location(1) objectRadius: f32,
   @location(2) obstacleColor: vec3f,
   @location(3) obstacleRadius: f32,
-  @location(4) bgColor: vec3f,
-  @location(5) layersOfObstacle: f32,
-  @location(6) numOfObstacle: f32,
+  @location(4) layersOfObstacle: f32,
+  @location(5) numOfObstacle: f32,
 }
