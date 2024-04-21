@@ -74,8 +74,8 @@ const main = async () => {
   const canvas = document.querySelector("canvas") as HTMLCanvasElement;
   canvas.style.width = `${WIDTH}px`;
   canvas.style.height = `${HEIGHT}px`;
-  canvas.width = WIDTH * 2;
-  canvas.height = HEIGHT * 2;
+  canvas.width = WIDTH * 5;
+  canvas.height = HEIGHT * 5;
 
   const presentationFormat: GPUTextureFormat =
     navigator.gpu.getPreferredCanvasFormat();
