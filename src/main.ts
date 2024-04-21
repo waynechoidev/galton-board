@@ -1,12 +1,13 @@
 import compute_billboard from "./shaders/billboard.compute.wgsl";
 import compute_movement from "./shaders/movement.compute.wgsl";
+import compute_result from "./shaders/result.compute.wgsl";
 import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
 import { VertexBuffers } from "./buffer/vertex";
 import { sumUpToN, generateRandomProbabilities } from "./utils";
 
-const HEIGHT = document.documentElement.clientHeight;
+const HEIGHT = document.documentElement.clientHeight * 0.7;
 const WIDTH = HEIGHT;
 const NUM_OF_PARTICLE = 256;
 const LAYERS_OF_OBSTACLE = 22;
@@ -48,23 +49,24 @@ const main = async () => {
   await objectBuffers.initialize(objectVertices);
 
   const obstacleVertices: Vertex[] = [];
+  const height = 0.088;
   for (let i = 1; i <= LAYERS_OF_OBSTACLE; ++i) {
     if (i % 2 === 1) {
       obstacleVertices.push({
-        position: [0, 0.9 - 0.08 * (i - 1)],
+        position: [0, 0.9 - height * (i - 1)],
         velocity: [0, 0],
         texCoord: [0, 0],
         isObstacle: 1,
       });
       for (let j = 0; j < Math.floor(i / 2); j++) {
         obstacleVertices.push({
-          position: [0 + 0.08 * (j + 1), 0.9 - 0.08 * (i - 1)],
+          position: [0 + 0.08 * (j + 1), 0.9 - height * (i - 1)],
           velocity: [0, 0],
           texCoord: [0, 0],
           isObstacle: 1,
         });
         obstacleVertices.push({
-          position: [0 - 0.08 * (j + 1), 0.9 - 0.08 * (i - 1)],
+          position: [0 - 0.08 * (j + 1), 0.9 - height * (i - 1)],
           velocity: [0, 0],
           texCoord: [0, 0],
           isObstacle: 1,
@@ -73,13 +75,13 @@ const main = async () => {
     } else {
       for (let j = 0; j < Math.floor(i / 2); j++) {
         obstacleVertices.push({
-          position: [0.04 + 0.08 * j, 0.9 - 0.08 * (i - 1)],
+          position: [0.04 + 0.08 * j, 0.9 - height * (i - 1)],
           velocity: [0, 0],
           texCoord: [0, 0],
           isObstacle: 1,
         });
         obstacleVertices.push({
-          position: [-0.04 - 0.08 * j, 0.9 - 0.08 * (i - 1)],
+          position: [-0.04 - 0.08 * j, 0.9 - height * (i - 1)],
           velocity: [0, 0],
           texCoord: [0, 0],
           isObstacle: 1,
@@ -90,6 +92,8 @@ const main = async () => {
   const obstacleBuffers = new VertexBuffers(device, "obstacle");
   await obstacleBuffers.initialize(obstacleVertices);
 
+  // Storage Buffer
+
   const probabilitiesBuffer = device.createBuffer({
     label: "probabilities uniform buffer",
     size: NUM_OF_PARTICLE * Float32Array.BYTES_PER_ELEMENT,
@@ -97,6 +101,38 @@ const main = async () => {
       GPUBufferUsage.STORAGE |
       GPUBufferUsage.COPY_SRC |
       GPUBufferUsage.COPY_DST,
+  });
+
+  const resultCriteriaUniformBuffer = device.createBuffer({
+    label: "resultCriteria uniform buffer",
+    size: LAYERS_OF_OBSTACLE * Float32Array.BYTES_PER_ELEMENT,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_SRC |
+      GPUBufferUsage.COPY_DST,
+  });
+  const resultCriteriaData = obstacleVertices
+    .slice(-LAYERS_OF_OBSTACLE)
+    .map((vertex) => vertex.position[0])
+    .sort((a, b) => a - b);
+  device.queue.writeBuffer(
+    resultCriteriaUniformBuffer,
+    0,
+    new Float32Array(resultCriteriaData)
+  );
+
+  const resultBuffer = device.createBuffer({
+    label: "result buffer",
+    size: (LAYERS_OF_OBSTACLE + 1) * Float32Array.BYTES_PER_ELEMENT,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_SRC |
+      GPUBufferUsage.COPY_DST,
+  });
+  const readResultBuffer = device.createBuffer({
+    label: "result buffer",
+    size: (LAYERS_OF_OBSTACLE + 1) * Float32Array.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
   });
 
   // Uniform Buffers
@@ -115,8 +151,9 @@ const main = async () => {
       0.01, // object size
       ...[1, 1, 1], // obstacle color
       0.02, // obstacle size
+      LAYERS_OF_OBSTACLE, //
       NUM_OF_OBSTACLE, // numOfObstacle
-      ...[0, 0, 0], // padding
+      ...[0, 0], // padding
     ])
   );
 
@@ -132,8 +169,19 @@ const main = async () => {
     layout: "auto",
     compute: {
       module: device.createShaderModule({
-        label: "billboard compute shader",
+        label: "movement compute shader",
         code: compute_movement,
+      }),
+    },
+  });
+
+  const computeResultPipeline = device.createComputePipeline({
+    label: "compute result pipeline",
+    layout: "auto",
+    compute: {
+      module: device.createShaderModule({
+        label: "result compute shader",
+        code: compute_result,
       }),
     },
   });
@@ -228,6 +276,17 @@ const main = async () => {
     ],
   });
 
+  const computeResultBindGroup = device.createBindGroup({
+    label: "compute result bind group",
+    layout: computeResultPipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: { buffer: objectBuffers.point } },
+      { binding: 1, resource: { buffer: constantUniformBuffer } },
+      { binding: 2, resource: { buffer: resultCriteriaUniformBuffer } },
+      { binding: 3, resource: { buffer: resultBuffer } },
+    ],
+  });
+
   const computeBillboardBindGroup = device.createBindGroup({
     label: "compute billboard bind group",
     layout: computeBillboardPipeline.getBindGroupLayout(0),
@@ -270,7 +329,7 @@ const main = async () => {
   device.queue.submit([commandBuffer]);
 
   let previousFrameTime = 0;
-  function render() {
+  async function render() {
     const time = performance.now();
     const delta: number = time - previousFrameTime;
     previousFrameTime = time;
@@ -286,21 +345,21 @@ const main = async () => {
       label: "encoder",
     });
 
-    const computeMovementPass = encoder.beginComputePass({
+    const computePass = encoder.beginComputePass({
       label: "compute movement pass",
     });
-    computeMovementPass.setPipeline(computeMovementPipeline);
-    computeMovementPass.setBindGroup(0, computeMovementBindGroup);
-    computeMovementPass.dispatchWorkgroups(1, 1);
-    computeMovementPass.end();
+    computePass.setPipeline(computeMovementPipeline);
+    computePass.setBindGroup(0, computeMovementBindGroup);
+    computePass.dispatchWorkgroups(1, 1);
 
-    const computeBillboardPass = encoder.beginComputePass({
-      label: "compute billboard pass",
-    });
-    computeBillboardPass.setPipeline(computeBillboardPipeline);
-    computeBillboardPass.setBindGroup(0, computeBillboardBindGroup);
-    computeBillboardPass.dispatchWorkgroups(1, 1);
-    computeBillboardPass.end();
+    computePass.setPipeline(computeResultPipeline);
+    computePass.setBindGroup(0, computeResultBindGroup);
+    computePass.dispatchWorkgroups(1, 1);
+
+    computePass.setPipeline(computeBillboardPipeline);
+    computePass.setBindGroup(0, computeBillboardBindGroup);
+    computePass.dispatchWorkgroups(1, 1);
+    computePass.end();
 
     const mainPass = encoder.beginRenderPass({
       label: "main pass",
@@ -322,9 +381,23 @@ const main = async () => {
     mainPass.draw(NUM_OF_OBSTACLE * 6);
     mainPass.end();
 
+    encoder.copyBufferToBuffer(
+      resultBuffer,
+      0,
+      readResultBuffer,
+      0,
+      readResultBuffer.size
+    );
+
     // Finish encoding and submit the commands
     const commandBuffer = encoder.finish();
     device.queue.submit([commandBuffer]);
+
+    await readResultBuffer.mapAsync(GPUMapMode.READ);
+    const result = new Float32Array(readResultBuffer.getMappedRange().slice(0));
+    readResultBuffer.unmap();
+
+    console.log(result);
 
     requestAnimationFrame(render);
   }

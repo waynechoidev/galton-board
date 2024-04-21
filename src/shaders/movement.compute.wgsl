@@ -32,6 +32,8 @@ fn computeSomething(
             newVelocity = normalize(vec2f(probability, -1));
         } else {
             newVelocity = vec2f(0, -1);
+            // newVelocity.y = -1;
+            // newVelocity = normalize(newVelocity);
         }
     }
 
