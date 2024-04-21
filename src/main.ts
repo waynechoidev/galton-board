@@ -38,7 +38,7 @@ const main = async () => {
     Math.round(val * 255)
   ).join(",")}) solid`;
 
-  const resultHeight = HEIGHT * 0.2;
+  const resultHeight = HEIGHT * 0.3;
   const resultEl = document.querySelector("#result") as HTMLDivElement;
   resultEl.style.height = `${resultHeight}px`;
   const resultGraph: HTMLSpanElement[] = [];
@@ -54,6 +54,7 @@ const main = async () => {
       ).join(",")}) solid`;
     const res = document.createElement("span");
     res.className = "res";
+    res.style.fontSize = `${WIDTH * 0.04}px`;
     slot.append(res);
     resultGraph.push(res);
     resultEl.append(slot);
@@ -440,6 +441,7 @@ const main = async () => {
     const max = Math.max.apply(null, Array.from(result));
     for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
       resultGraph[i].style.height = `${(result[i] / max) * resultHeight}px`;
+      if (result[i]) resultGraph[i].innerHTML = result[i].toString();
     }
 
     requestAnimationFrame(render);

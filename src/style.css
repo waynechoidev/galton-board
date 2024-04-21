@@ -25,6 +25,7 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
+  overflow: hidden;
 }
 
 .slot {
@@ -37,4 +38,7 @@ body {
   width: 100%;
   background-color: red;
   height: 0px;
+  color: #fff;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
 }
