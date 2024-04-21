@@ -2,8 +2,9 @@
 
 @group(0) @binding(0) var<storage, read_write> objects: array<Vertex>;
 @group(0) @binding(1) var<storage, read_write> obstacles: array<Vertex>;
-@group(0) @binding(2) var<uniform> constant: Constant;
-@group(0) @binding(3) var<uniform> delta: f32;
+@group(0) @binding(2) var<storage, read_write> probabilities: array<f32>;
+@group(0) @binding(3) var<uniform> constant: Constant;
+@group(0) @binding(4) var<uniform> delta: f32;
 
 @compute @workgroup_size(256)
 fn computeSomething(
@@ -11,12 +12,12 @@ fn computeSomething(
 ) {
     let index = global_invocation_id.x;
 
-    let probability:f32 = 1.0;
     let speed:f32 = 0.0005;
     let restitutionCoefficient: f32 = 0.3;
     let collisionRadius = constant.objectRadius + constant.obstacleRadius;
 
     let object = objects[index];
+    let probability:f32 = probabilities[index];
 
     let obstacle = obstacles[0];
 
@@ -29,9 +30,16 @@ fn computeSomething(
 
     if (collisionDistance < collisionRadius) {
         let normal = distanceVector / distanceVectorLength;
-        let tangent = vec2f(probability * normal.y, normal.x);
+        var tangent:vec2f;
+        if(object.position.x == obstacle.position.x)
+        {
+            tangent = vec2f(probability * normal.y, normal.x);
+        } else {
+            tangent = vec2f(normal.y, normal.x);
+        }
         newPosition = vec2f(obstacle.position.x, obstacle.position.y) + normal * collisionRadius + tangent * speed * delta;
         newVelocity = tangent * length(newVelocity) * restitutionCoefficient;
+        // newVelocity = vec2f(0.0);
     } else {
         newVelocity.y -= speed * delta;
     }

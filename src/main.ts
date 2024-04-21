@@ -4,9 +4,10 @@ import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
 import { VertexBuffers } from "./buffer/vertex";
+import { generateRandomProbabilities } from "./utils";
 
-const HEIGHT = document.documentElement.clientHeight;
-const WIDTH = Math.min(document.documentElement.clientWidth, HEIGHT / 2);
+const HEIGHT = document.documentElement.clientHeight / 2;
+const WIDTH = HEIGHT;
 const NUM_OF_PARTICLE = 1; //256
 
 const main = async () => {
@@ -48,7 +49,7 @@ const main = async () => {
   const obstacleVertices: Vertex[] = [];
   for (let i = 0; i < 1; ++i) {
     obstacleVertices.push({
-      position: [0, 0.8],
+      position: [0, 0.7],
       velocity: [0, 0],
       texCoord: [0, 0],
       isObstacle: 1,
@@ -57,9 +58,19 @@ const main = async () => {
   const obstacleBuffers = new VertexBuffers(device, "obstacle");
   await obstacleBuffers.initialize(obstacleVertices);
 
+  const probabilitiesBuffer = device.createBuffer({
+    label: "probabilities uniform buffer",
+    size: NUM_OF_PARTICLE * Float32Array.BYTES_PER_ELEMENT,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_SRC |
+      GPUBufferUsage.COPY_DST,
+  });
+
   // Uniform Buffers
+
   const constantUniformBuffer = device.createBuffer({
-    label: "screen uniform buffer",
+    label: "constant uniform buffer",
     size: 12 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
@@ -69,12 +80,11 @@ const main = async () => {
     0,
     new Float32Array([
       ...[1, 0, 0], // object color
-      0.01, // object size
+      0.025, // object size
       ...[1, 1, 1], // obstacle color
-      0.02, // obstacle size
-      ...[WIDTH, HEIGHT], // screenSize
+      0.05, // obstacle size
       1, // numOfObstacle
-      0, // padding
+      ...[0, 0, 0], // padding
     ])
   );
 
@@ -180,8 +190,9 @@ const main = async () => {
     entries: [
       { binding: 0, resource: { buffer: objectBuffers.point } },
       { binding: 1, resource: { buffer: obstacleBuffers.point } },
-      { binding: 2, resource: { buffer: constantUniformBuffer } },
-      { binding: 3, resource: { buffer: deltaUniformBuffer } },
+      { binding: 2, resource: { buffer: probabilitiesBuffer } },
+      { binding: 3, resource: { buffer: constantUniformBuffer } },
+      { binding: 4, resource: { buffer: deltaUniformBuffer } },
     ],
   });
 
@@ -233,6 +244,11 @@ const main = async () => {
     previousFrameTime = time;
 
     device.queue.writeBuffer(deltaUniformBuffer, 0, new Float32Array([delta]));
+    device.queue.writeBuffer(
+      probabilitiesBuffer,
+      0,
+      generateRandomProbabilities(NUM_OF_PARTICLE)
+    );
 
     const encoder = device.createCommandEncoder({
       label: "encoder",

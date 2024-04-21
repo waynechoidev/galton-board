@@ -8,17 +8,15 @@
 fn computeSomething(
     @builtin(global_invocation_id) global_invocation_id : vec3<u32>,
 ) {
-    let screenRatio = constant.screenSize.x / constant.screenSize.y;
-
     let startIndex = i32(global_invocation_id.x);
 
     var pos = array<vec2f, 6>(
-        vec2(-1.0, 1.0 * screenRatio),
-        vec2(1.0, 1.0 * screenRatio),
-        vec2(-1.0, -1.0 * screenRatio),
-        vec2(-1.0, -1.0 * screenRatio),
-        vec2(1.0, 1.0 * screenRatio),
-        vec2(1.0, -1.0 * screenRatio),
+        vec2(-1.0, 1.0),
+        vec2(1.0, 1.0),
+        vec2(-1.0, -1.0),
+        vec2(-1.0, -1.0),
+        vec2(1.0, 1.0),
+        vec2(1.0, -1.0),
     );
 
     var tex = array<vec2f, 6>(
@@ -32,10 +30,10 @@ fn computeSomething(
 
     let input = inputVertex[startIndex];
 
-    var size:f32 = constant.objectRadius * 2;
+    var size:f32 = constant.objectRadius;
     if(input.isObstacle == 1.0)
     {
-        size = constant.obstacleRadius * 2;
+        size = constant.obstacleRadius;
     }
 
     for (var i = 0; i < 6; i++) {
