@@ -4,12 +4,13 @@ import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
 import { VertexBuffers } from "./buffer/vertex";
-import { generateRandomProbabilities } from "./utils";
+import { sumUpToN, generateRandomProbabilities } from "./utils";
 
-const HEIGHT = document.documentElement.clientHeight / 2;
+const HEIGHT = document.documentElement.clientHeight;
 const WIDTH = HEIGHT;
-const NUM_OF_PARTICLE = 1; //256
-
+const NUM_OF_PARTICLE = 256;
+const LAYERS_OF_OBSTACLE = 22;
+const NUM_OF_OBSTACLE = sumUpToN(LAYERS_OF_OBSTACLE);
 const main = async () => {
   // Initialize
   const adapter = await navigator.gpu?.requestAdapter();
@@ -37,7 +38,7 @@ const main = async () => {
   const objectVertices: Vertex[] = [];
   for (let i = 0; i < NUM_OF_PARTICLE; ++i) {
     objectVertices.push({
-      position: [0, 1],
+      position: [0, 1 + i * 0.01],
       velocity: [0, -1],
       texCoord: [0, 0],
       isObstacle: 0,
@@ -47,13 +48,44 @@ const main = async () => {
   await objectBuffers.initialize(objectVertices);
 
   const obstacleVertices: Vertex[] = [];
-  for (let i = 0; i < 1; ++i) {
-    obstacleVertices.push({
-      position: [0, 0.7],
-      velocity: [0, 0],
-      texCoord: [0, 0],
-      isObstacle: 1,
-    });
+  for (let i = 1; i <= LAYERS_OF_OBSTACLE; ++i) {
+    if (i % 2 === 1) {
+      obstacleVertices.push({
+        position: [0, 0.9 - 0.08 * (i - 1)],
+        velocity: [0, 0],
+        texCoord: [0, 0],
+        isObstacle: 1,
+      });
+      for (let j = 0; j < Math.floor(i / 2); j++) {
+        obstacleVertices.push({
+          position: [0 + 0.08 * (j + 1), 0.9 - 0.08 * (i - 1)],
+          velocity: [0, 0],
+          texCoord: [0, 0],
+          isObstacle: 1,
+        });
+        obstacleVertices.push({
+          position: [0 - 0.08 * (j + 1), 0.9 - 0.08 * (i - 1)],
+          velocity: [0, 0],
+          texCoord: [0, 0],
+          isObstacle: 1,
+        });
+      }
+    } else {
+      for (let j = 0; j < Math.floor(i / 2); j++) {
+        obstacleVertices.push({
+          position: [0.04 + 0.08 * j, 0.9 - 0.08 * (i - 1)],
+          velocity: [0, 0],
+          texCoord: [0, 0],
+          isObstacle: 1,
+        });
+        obstacleVertices.push({
+          position: [-0.04 - 0.08 * j, 0.9 - 0.08 * (i - 1)],
+          velocity: [0, 0],
+          texCoord: [0, 0],
+          isObstacle: 1,
+        });
+      }
+    }
   }
   const obstacleBuffers = new VertexBuffers(device, "obstacle");
   await obstacleBuffers.initialize(obstacleVertices);
@@ -80,10 +112,10 @@ const main = async () => {
     0,
     new Float32Array([
       ...[1, 0, 0], // object color
-      0.025, // object size
+      0.01, // object size
       ...[1, 1, 1], // obstacle color
-      0.05, // obstacle size
-      1, // numOfObstacle
+      0.02, // obstacle size
+      NUM_OF_OBSTACLE, // numOfObstacle
       ...[0, 0, 0], // padding
     ])
   );
@@ -287,7 +319,7 @@ const main = async () => {
     mainPass.draw(NUM_OF_PARTICLE * 6);
 
     mainPass.setVertexBuffer(0, obstacleBuffers.billboard);
-    mainPass.draw(NUM_OF_PARTICLE * 6);
+    mainPass.draw(NUM_OF_OBSTACLE * 6);
     mainPass.end();
 
     // Finish encoding and submit the commands

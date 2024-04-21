@@ -13,36 +13,27 @@ fn computeSomething(
     let index = global_invocation_id.x;
 
     let speed:f32 = 0.0005;
-    let restitutionCoefficient: f32 = 0.3;
+    let restitutionCoefficient: f32 = 0.01;
     let collisionRadius = constant.objectRadius + constant.obstacleRadius;
 
     let object = objects[index];
     let probability:f32 = probabilities[index];
 
-    let obstacle = obstacles[0];
-
-    let collisionDistance = distance(object.position, obstacle.position);
-
     var newVelocity = object.velocity;
     var newPosition = object.position + object.velocity * speed * delta;
-    let distanceVector = newPosition - vec2f(obstacle.position.x, obstacle.position.y);
-    let distanceVectorLength = length(distanceVector);
 
-    if (collisionDistance < collisionRadius) {
-        let normal = distanceVector / distanceVectorLength;
-        var tangent:vec2f;
-        if(object.position.x == obstacle.position.x)
-        {
-            tangent = vec2f(probability * normal.y, normal.x);
+    for (var i = 0; i < i32(constant.numOfObstacle); i++) {
+        let obstacle = obstacles[i];
+        let collisionDistance = distance(object.position, obstacle.position);
+
+        if (collisionDistance < collisionRadius) {
+            let normal = normalize(newPosition - vec2f(obstacle.position.x, obstacle.position.y));
+            newPosition = vec2f(obstacle.position.x + probability * restitutionCoefficient, obstacle.position.y) + normal * collisionRadius;
+            newVelocity = normalize(vec2f(probability, -1));
         } else {
-            tangent = vec2f(normal.y, normal.x);
+            newVelocity = vec2f(0, -1);
         }
-        newPosition = vec2f(obstacle.position.x, obstacle.position.y) + normal * collisionRadius + tangent * speed * delta;
-        newVelocity = tangent * length(newVelocity) * restitutionCoefficient;
-        // newVelocity = vec2f(0.0);
-    } else {
-        newVelocity.y -= speed * delta;
     }
-    
+
     objects[index] = Vertex(newPosition, newVelocity, object.texCoord, object.isObstacle);
 }
