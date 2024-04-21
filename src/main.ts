@@ -7,11 +7,10 @@ import { Vertex } from "./common";
 import { VertexBuffers } from "./vertex-buffers";
 import { sumUpToN, generateRandomProbabilities } from "./utils";
 
-const HEIGHT =
-  document.documentElement.clientHeight *
-  (document.documentElement.clientHeight > document.documentElement.clientWidth
-    ? 0.5
-    : 0.7);
+const HEIGHT = Math.min(
+  document.documentElement.clientHeight * 0.7,
+  document.documentElement.clientWidth * 0.95
+);
 const WIDTH = HEIGHT;
 const NUM_OF_PARTICLE = 256;
 const LAYERS_OF_OBSTACLE = 22;
