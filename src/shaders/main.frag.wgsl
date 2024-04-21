@@ -16,7 +16,7 @@
         return vec4f(color, 1.0);
     } else 
     {
-        return vec4f(0.0);
+        return vec4f(constant.bgColor, 1);
     }
 
 }

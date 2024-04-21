@@ -7,11 +7,14 @@ import { Vertex } from "./common";
 import { VertexBuffers } from "./vertex-buffers";
 import { sumUpToN, generateRandomProbabilities } from "./utils";
 
-const HEIGHT = document.documentElement.clientHeight * 0.7;
+const HEIGHT = document.documentElement.clientHeight * 0.6;
 const WIDTH = HEIGHT;
 const NUM_OF_PARTICLE = 256;
 const LAYERS_OF_OBSTACLE = 22;
 const NUM_OF_OBSTACLE = sumUpToN(LAYERS_OF_OBSTACLE);
+const BG_COLOR = [0.97, 0.92, 0.8];
+const OBSTACLE_COLOR = [0.545, 0.271, 0.075];
+
 const main = async () => {
   // Initialize
   const adapter = await navigator.gpu?.requestAdapter();
@@ -19,6 +22,35 @@ const main = async () => {
   if (!device) {
     alert("need a browser that supports WebGPU");
     return;
+  }
+
+  const board = document.querySelector("#board") as HTMLDivElement;
+  board.style.width = `${WIDTH}px`;
+  // board.style.height = `${document.documentElement.clientHeight}px`;
+  board.style.backgroundColor = `rgb(${BG_COLOR.map((val) =>
+    Math.round(val * 255)
+  ).join(",")})`;
+  board.style.border = `2px rgb(${OBSTACLE_COLOR.map((val) =>
+    Math.round(val * 255)
+  ).join(",")}) solid`;
+
+  const resultEl = document.querySelector("#result") as HTMLDivElement;
+  const resultGraph: HTMLSpanElement[] = [];
+  for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
+    const slot = document.createElement("span");
+    slot.className = "slot";
+    slot.style.borderLeft = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
+      Math.round(val * 255)
+    ).join(",")}) solid`;
+    if (i === LAYERS_OF_OBSTACLE)
+      slot.style.borderRight = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
+        Math.round(val * 255)
+      ).join(",")}) solid`;
+    const res = document.createElement("span");
+    res.className = "res";
+    slot.append(res);
+    resultGraph.push(res);
+    resultEl.append(slot);
   }
 
   const canvas = document.querySelector("canvas") as HTMLCanvasElement;
@@ -139,7 +171,7 @@ const main = async () => {
 
   const constantUniformBuffer = device.createBuffer({
     label: "constant uniform buffer",
-    size: 12 * Float32Array.BYTES_PER_ELEMENT,
+    size: 16 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
@@ -149,11 +181,12 @@ const main = async () => {
     new Float32Array([
       ...[1, 0, 0], // object color
       0.01, // object size
-      ...[1, 1, 1], // obstacle color
-      0.02, // obstacle size
-      LAYERS_OF_OBSTACLE, //
+      ...OBSTACLE_COLOR, // obstacle color
+      0.025, // obstacle size
+      ...BG_COLOR, // bg color
+      LAYERS_OF_OBSTACLE, // layers of obstacle
       NUM_OF_OBSTACLE, // numOfObstacle
-      ...[0, 0], // padding
+      ...[0, 0, 0], // padding
     ])
   );
 
@@ -242,18 +275,6 @@ const main = async () => {
       targets: [
         {
           format: presentationFormat,
-          blend: {
-            color: {
-              srcFactor: "one",
-              dstFactor: "one",
-              operation: "add",
-            },
-            alpha: {
-              srcFactor: "one",
-              dstFactor: "one",
-              operation: "add",
-            },
-          },
         },
       ],
     },
@@ -366,7 +387,7 @@ const main = async () => {
       colorAttachments: [
         {
           view: context.getCurrentTexture().createView(),
-          clearValue: [0, 0, 0, 1],
+          clearValue: [...BG_COLOR, 1],
           loadOp: "clear",
           storeOp: "store",
         },
@@ -397,7 +418,10 @@ const main = async () => {
     const result = new Float32Array(readResultBuffer.getMappedRange().slice(0));
     readResultBuffer.unmap();
 
-    console.log(result);
+    const max = Math.max.apply(null, Array.from(result));
+    for (let i = 0; i < LAYERS_OF_OBSTACLE + 1; i++) {
+      resultGraph[i].style.height = `${(result[i] / max) * 50}px`;
+    }
 
     requestAnimationFrame(render);
   }
