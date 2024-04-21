@@ -52,6 +52,7 @@ const main = async () => {
       slot.style.borderRight = `0.5px rgb(${OBSTACLE_COLOR.map((val) =>
         Math.round(val * 255)
       ).join(",")}) solid`;
+    slot.style.width = `${WIDTH * 0.039}px`;
     const res = document.createElement("span");
     res.className = "res";
     res.style.fontSize = `${WIDTH * 0.04}px`;
