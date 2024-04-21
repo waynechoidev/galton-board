@@ -1,4 +1,4 @@
-import { Vertex } from "../common";
+import { Vertex } from "./common";
 
 export class VertexBuffers {
   private _label: string;

@@ -4,7 +4,7 @@ import compute_result from "./shaders/result.compute.wgsl";
 import main_vert from "./shaders/main.vert.wgsl";
 import main_frag from "./shaders/main.frag.wgsl";
 import { Vertex } from "./common";
-import { VertexBuffers } from "./buffer/vertex";
+import { VertexBuffers } from "./vertex-buffers";
 import { sumUpToN, generateRandomProbabilities } from "./utils";
 
 const HEIGHT = document.documentElement.clientHeight * 0.7;
