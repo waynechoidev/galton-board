@@ -39,4 +39,5 @@ body {
   color: #fff;
   writing-mode: vertical-rl;
   text-orientation: upright;
+  overflow: hidden;
 }
